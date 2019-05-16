@@ -46,8 +46,6 @@
 @end
 
 
-static NSInteger cm_page_animation_drucaiton = 0;
-
 @implementation CMPageTitleContentView
 
 
@@ -524,61 +522,6 @@ static NSInteger cm_page_animation_drucaiton = 0;
     
     
     [self click_modifyUnderlineWithScrollProgress:progress LeftIndex:leftIndex RightIndex:rightIndex];
-    
-    //
-    //    CMDisplayTitleLabel *rightLabel = self.titleLabels[rightIndex];
-    //    CMDisplayTitleLabel *leftLabel = self.titleLabels[leftIndex];
-    //
-    //
-    //    CGFloat rightLabelX = rightLabel.cm_x + (1 - self.config.cm_underlineWidthScale)*rightLabel.cm_width*0.5;
-    //    CGFloat leftLabelX = leftLabel.cm_x + (1 - self.config.cm_underlineWidthScale)*leftLabel.cm_width*0.5;
-    //    CGFloat rightLabelWidth = rightLabel.cm_width * self.config.cm_underlineWidthScale;
-    //    CGFloat leftLabelWidth = leftLabel.cm_width * self.config.cm_underlineWidthScale;
-    //
-    //    if (!self.config.cm_underlineStretch) {
-    //
-    //        CGFloat deltaX = self.config.cm_underlineWidth ? (rightLabel.cm_centerX - leftLabel.cm_centerX) : (rightLabelX - leftLabelX);
-    //
-    //        CGFloat deltaWidth = self.config.cm_underlineWidth ? 0 : (rightLabelWidth - leftLabelWidth);
-    //
-    //        CGFloat newOriginalX = self.config.cm_underlineWidth ? progress*deltaX + leftLabel.cm_centerX - self .config.cm_underlineWidth * 0.5: progress * deltaX + leftLabelX;
-    //        CGFloat newWidth = self.config.cm_underlineWidth ? : (progress * deltaWidth + leftLabelWidth);
-    //
-    //        self.underLine.cm_x = newOriginalX;
-    //        self.underLine.cm_width = newWidth;
-    //
-    //    } else {
-    //
-    //        CGFloat rightLabelRight = rightLabel.cm_right - (rightLabel.cm_width - rightLabelWidth)*0.5;
-    //        CGFloat leftLabelRight = leftLabel.cm_right - (leftLabel.cm_width - leftLabelWidth)*0.5;
-    //
-    //        if (progress <= 0.5) {
-    //            CGFloat deltaWidth =  self.config.cm_underlineWidth ? (rightLabel.cm_centerX - leftLabel.cm_centerX) : rightLabelRight - leftLabelRight;
-    //
-    //            CGFloat originalWidth = self.config.cm_underlineWidth ?: leftLabelWidth;
-    //
-    //            CGFloat newWidth = 2 * progress * deltaWidth + originalWidth;
-    //
-    //            CGFloat originalX = self.config.cm_underlineWidth ? leftLabel.cm_centerX - self.config.cm_underlineWidth * 0.5 : leftLabelX;
-    //
-    //            self.underLine.cm_width = newWidth;
-    //            self.underLine.cm_x = originalX;
-    //
-    //
-    //        } else {
-    //
-    //            CGFloat deltaWidth = self.config.cm_underlineWidth ? (rightLabel.cm_centerX - leftLabel.cm_centerX) : rightLabelX - leftLabelX;
-    //
-    //            progress = 1- progress;
-    //            CGFloat newWidth = 2 * progress * deltaWidth + (self.config.cm_underlineWidth ?: rightLabelWidth);
-    //
-    //            CGFloat originalX = self.config.cm_underlineWidth ? rightLabel.cm_centerX + self.config.cm_underlineWidth * 0.5 - newWidth : rightLabelRight - newWidth;
-    //
-    //            self.underLine.cm_x = originalX;
-    //            self.underLine.cm_width = newWidth;
-    //
-    //        }
-    //    }
     
 }
 
