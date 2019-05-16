@@ -39,10 +39,6 @@
 /**分割线视图数组*/
 @property (nonatomic,strong) NSArray *seperateLines;
 
-/**定时器*/
-@property (nonatomic,strong) CADisplayLink *displayLink;
-
-
 /**目标label*/
 @property (nonatomic,strong) UILabel *targetLabel;
 
@@ -54,26 +50,6 @@ static NSInteger cm_page_animation_drucaiton = 0;
 
 @implementation CMPageTitleContentView
 
-- (CADisplayLink *)displayLink {
-    
-    if (!_displayLink) {
-        _displayLink = [CADisplayLink displayLinkWithTarget:[CMWeakProxy cm_proxyWithTarget:self] selector:@selector(scrollViewAnimation:)];
-        
-        if (@available(iOS 10.0, *)) {
-            _displayLink.preferredFramesPerSecond = 1.5;
-
-        } else {
-            
-            _displayLink.frameInterval = 1.5;
-        }
-        
-        
-        [_displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSRunLoopCommonModes];
-        
-    }
-    return _displayLink;
-    
-}
 
 - (NSArray *)seperateLines {
     
@@ -105,15 +81,23 @@ static NSInteger cm_page_animation_drucaiton = 0;
 - (UIView *)underLine {
     
     if (!_underLine) {
-        UIView *underLineView = [UIView new];
-        underLineView.backgroundColor = self.config.cm_underlineColor;
-        underLineView.layer.cornerRadius = self.config.cm_underlineBorder ? self.config.cm_underlineHeight * 0.5 : 0;
-        underLineView.layer.masksToBounds = YES;
-        [self addSubview:underLineView];
+        UIView *underLine = [UIView new];
+        underLine.backgroundColor = self.config.cm_underlineColor;
+        underLine.layer.cornerRadius = self.config.cm_underlineBorder ? self.config.cm_underlineHeight * 0.5 : 0;
+        underLine.layer.masksToBounds = YES;
         
-        _underLine = underLineView;
+        UILabel *label = self.titleLabels.firstObject;
+        CGFloat underLineWidth = self.config.cm_underlineWidth ?: label.cm_width * self.config.cm_underlineWidthScale;
+        
+        underLine.cm_height = self.config.cm_underlineHeight;
+        underLine.cm_bottom = self.cm_bottom;
+        underLine.cm_width = underLineWidth;
+        underLine.cm_centerX = label.cm_centerX;
+        
+        [self addSubview:underLine];
+        
+        _underLine = underLine;
     }
-    
     return _underLine ;
 
 }
@@ -136,8 +120,11 @@ static NSInteger cm_page_animation_drucaiton = 0;
     
     _cm_selectedIndex = cm_selectedIndex;
     
-    [self selectLabel:self.titleLabels[cm_selectedIndex]];
     
+    [self setTitleColorWithLabel:[self.titleLabels objectAtIndex:cm_selectedIndex]];
+    
+    _selectedLabel = [self.titleLabels objectAtIndex:cm_selectedIndex];
+
 }
 
 
@@ -276,66 +263,26 @@ static NSInteger cm_page_animation_drucaiton = 0;
 
 #pragma mark --- 样式视图
 
-- (void)scrollViewAnimation:(CADisplayLink *)displayLink {
-    
-    cm_page_animation_drucaiton += 0.1;
-    
-    
-
-    [self cm_pageTitleViewDidScrollProgress:cm_page_animation_drucaiton LeftIndex:[self.titleLabels indexOfObject:self.selectedLabel] RightIndex:[self.titleLabels indexOfObject:self.targetLabel]];
-    
-    if (cm_page_animation_drucaiton > 1) {
-        [displayLink invalidate];
-    }
-    
-    
-}
-
 - (void)setUnderLineWithLabel:(UILabel *)label {
     
     if (!(self.config.cm_switchMode & CMPageTitleSwitchMode_Underline)) return;
 
-    //根据标题的宽度获得下划线的宽度
-    CGFloat underLineWidth = self.config.cm_underlineWidth ?: label.cm_width * self.config.cm_underlineWidthScale;
+    [self underLine];
     
-    self.underLine.cm_height = self.config.cm_underlineHeight;
-    self.underLine.cm_bottom = self.cm_bottom;
-
+    NSInteger selectedIndex = [self.titleLabels indexOfObject:self.selectedLabel];
+    NSInteger index = [self.titleLabels indexOfObject:label];
     
-        if (self.underLine.cm_x == 0) {
-            
-            self.underLine.cm_width = underLineWidth;
-            self.underLine.cm_centerX = label.cm_centerX;
-            
-        } else {
-            
-            [UIView animateWithDuration:0.25 animations:^{
+    [UIView animateWithDuration:0.25 * 0.5 animations:^{
 
-                CGFloat rightLabelX = label.cm_x + (1 - self.config.cm_underlineWidthScale)*label.cm_width*0.5;
-                CGFloat leftLabelX = self.selectedLabel.cm_x + (1 - self.config.cm_underlineWidthScale)*self.selectedLabel.cm_width*0.5;
-                CGFloat rightLabelWidth = label.cm_width * self.config.cm_underlineWidthScale;
-                CGFloat leftLabelWidth = self.selectedLabel.cm_width * self.config.cm_underlineWidthScale;
-                if (!self.config.cm_underlineStretch) {
-                    
-                    CGFloat deltaX = self.config.cm_underlineWidth ? (label.cm_centerX - self.selectedLabel.cm_centerX) : (rightLabelX - leftLabelX);
-                    
-                    CGFloat deltaWidth = self.config.cm_underlineWidth ? 0 : (rightLabelWidth - leftLabelWidth);
-                    
-                    CGFloat newOriginalX = self.config.cm_underlineWidth ? deltaX + self.selectedLabel.cm_centerX - self .config.cm_underlineWidth * 0.5:  deltaX + leftLabelX;
-                    CGFloat newWidth = self.config.cm_underlineWidth ? : ( deltaWidth + leftLabelWidth);
-                    
-                    self.underLine.cm_x = newOriginalX;
-                    self.underLine.cm_width = newWidth;
-                    
-                }
-            }];
-//            cm_page_animation_drucaiton = 0;
-//
-//            self.targetLabel = label;
-//
-//            [self displayLink];
-            
-        }
+        [self click_modifyUnderlineWithScrollProgress:0.5 LeftIndex: index > selectedIndex ? selectedIndex : index RightIndex:index > selectedIndex ? index : selectedIndex];
+
+    } completion:^(BOOL finished) {
+        
+        [UIView animateWithDuration:0.25 * 0.5 animations:^{
+
+            [self click_modifyUnderlineWithScrollProgress: 1  LeftIndex: selectedIndex RightIndex:index ];
+        }];
+    }];
 }
 
 /**遮罩样式*/
@@ -364,11 +311,7 @@ static NSInteger cm_page_animation_drucaiton = 0;
                 self.titleCover.cm_width = coverW;
                 self.titleCover.cm_centerX = label.cm_centerX;
             }];
-        
-            
-            
         }
-
 }
 
 
@@ -398,6 +341,27 @@ static NSInteger cm_page_animation_drucaiton = 0;
 - (void)selectLabel:(CMDisplayTitleLabel *)label {
     
    
+    [self setEffectWithLabel:label];
+    
+    _selectedLabel = (CMDisplayTitleLabel *)label;
+    _lastOffsetX = [self.titleLabels indexOfObject:label] * self.cm_width;
+   
+}
+
+- (void)setTitleColorWithLabel:(CMDisplayTitleLabel *)label {
+    
+        self.selectedLabel.textColor = self.config.cm_normalColor;
+        self.selectedLabel.cm_progress = 0;
+        
+        label.textColor = self.config.cm_selectedColor;
+        label.cm_fillColor = self.config.cm_selectedColor;
+        label.cm_progress = 0;
+    
+}
+
+
+- (void)setEffectWithLabel:(CMDisplayTitleLabel *)label {
+    
     
     if (_selectedLabel == label) return;
     
@@ -406,21 +370,12 @@ static NSInteger cm_page_animation_drucaiton = 0;
     [self setTitleScaleCenter:label];
     
     [self setTitleCoverWithLabel:label];
-   
+    
     [self setUnderLineWithLabel:label];
     
-    
-    
-    _selectedLabel.textColor = self.config.cm_normalColor;
-    _selectedLabel.cm_progress = 0;
+    [self setTitleColorWithLabel:label];
 
-    label.textColor = self.config.cm_selectedColor;
-    label.cm_fillColor = self.config.cm_selectedColor;
-    label.cm_progress = 0;
     
-    _selectedLabel = (CMDisplayTitleLabel *)label;
-    _lastOffsetX = [self.titleLabels indexOfObject:label] * self.cm_width;
-
 }
 
 
@@ -428,12 +383,13 @@ static NSInteger cm_page_animation_drucaiton = 0;
 
     if (!(self.config.cm_switchMode & CMPageTitleSwitchMode_Scale)) return;
 
-    _selectedLabel.transform = CGAffineTransformIdentity;
-    _selectedLabel.cm_fillColor = self.config.cm_selectedColor;
-    _selectedLabel.cm_progress = 1;
+    self.selectedLabel.transform = CGAffineTransformIdentity;
+    self.selectedLabel.textColor = self.config.cm_normalColor;
+    self.selectedLabel.cm_progress = 0;
     
     label.transform = CGAffineTransformMakeScale(self.config.cm_scale, self.config.cm_scale);
 
+    
 }
 
 /**
@@ -465,13 +421,13 @@ static NSInteger cm_page_animation_drucaiton = 0;
 
 - (void)cm_pageTitleViewDidScrollProgress:(CGFloat)progress LeftIndex:(NSUInteger)leftIndex RightIndex:(NSUInteger)rightIndex {
     
-    [self modifyTitleScaleWithScrollProgress:progress LeftIndex:leftIndex RightIndex:rightIndex];
+    [self scroll_modifyTitleScaleWithScrollProgress:progress LeftIndex:leftIndex RightIndex:rightIndex];
     
-    [self modifyColorWithScrollProgress:progress LeftIndex:leftIndex RightIndex:rightIndex];
+    [self scroll_modifyColorWithScrollProgress:progress LeftIndex:leftIndex RightIndex:rightIndex];
     
-    [self modifyUnderlineWithScrollProgress:progress LeftIndex:leftIndex RightIndex:rightIndex];
+    [self scroll_modifyUnderlineWithScrollProgress:progress LeftIndex:leftIndex RightIndex:rightIndex];
     
-    [self modifyCoverWithScrollProgress:progress LeftIndex:leftIndex RightIndex:rightIndex];
+    [self scroll_modifyCoverWithScrollProgress:progress LeftIndex:leftIndex RightIndex:rightIndex];
     
     self.lastOffsetX = leftIndex * self.cm_width + progress * self.cm_width;
 }
@@ -479,10 +435,158 @@ static NSInteger cm_page_animation_drucaiton = 0;
 
 
 #pragma mark --- 标题各效果渐变
+- (void)click_modifyUnderlineWithScrollProgress:(CGFloat)progress LeftIndex:(NSUInteger)leftIndex RightIndex:(NSUInteger)rightIndex {
+    
+    if ( rightIndex >= self.titleLabels.count || leftIndex >= self.titleLabels.count || !(self.config.cm_switchMode & CMPageTitleSwitchMode_Underline)) return;
+    
+    CMDisplayTitleLabel *rightLabel = self.titleLabels[rightIndex];
+    CMDisplayTitleLabel *leftLabel = self.titleLabels[leftIndex];
+    
+    
+    CGFloat rightLabelX = rightLabel.cm_x + (1 - self.config.cm_underlineWidthScale)*rightLabel.cm_width*0.5;
+    CGFloat leftLabelX = leftLabel.cm_x + (1 - self.config.cm_underlineWidthScale)*leftLabel.cm_width*0.5;
+    CGFloat rightLabelWidth = rightLabel.cm_width * self.config.cm_underlineWidthScale;
+    CGFloat leftLabelWidth = leftLabel.cm_width * self.config.cm_underlineWidthScale;
+    
+    if (!self.config.cm_underlineStretch) {
+        
+        CGFloat deltaX = self.config.cm_underlineWidth ? (rightLabel.cm_centerX - leftLabel.cm_centerX) : (rightLabelX - leftLabelX);
+        
+        CGFloat deltaWidth = self.config.cm_underlineWidth ? 0 : (rightLabelWidth - leftLabelWidth);
+        
+        CGFloat newOriginalX = self.config.cm_underlineWidth ? progress*deltaX + leftLabel.cm_centerX - self .config.cm_underlineWidth * 0.5: progress * deltaX + leftLabelX;
+        CGFloat newWidth = self.config.cm_underlineWidth ? : (progress * deltaWidth + leftLabelWidth);
+        
+        self.underLine.cm_x = newOriginalX;
+        self.underLine.cm_width = newWidth;
+        
+    } else {
+        
+        CGFloat rightLabelRight = rightLabel.cm_right - (rightLabel.cm_width - rightLabelWidth)*0.5;
+        CGFloat leftLabelRight = leftLabel.cm_right - (leftLabel.cm_width - leftLabelWidth)*0.5;
+        
+        if ( progress <= 0.5) {
+            CGFloat deltaWidth =  self.config.cm_underlineWidth ? (rightLabel.cm_centerX - leftLabel.cm_centerX) : rightLabelRight - leftLabelRight;
+            
+            CGFloat originalWidth = self.config.cm_underlineWidth ?: leftLabelWidth;
+            
+            CGFloat newWidth = 2 * progress * deltaWidth + originalWidth;
+            
+            CGFloat originalX = self.config.cm_underlineWidth ? leftLabel.cm_centerX - self.config.cm_underlineWidth * 0.5 : leftLabelX;
+            
+            self.underLine.cm_width = newWidth;
+            self.underLine.cm_x = originalX;
+            
+            
+        } else {
+            
+            CGFloat deltaWidth = self.config.cm_underlineWidth ? (rightLabel.cm_centerX - leftLabel.cm_centerX) : rightLabelX - leftLabelX;
+            
+            progress = 1- progress;
+            CGFloat newWidth = 2 * progress * deltaWidth + (self.config.cm_underlineWidth ?: rightLabelWidth);
+            
+            CGFloat originalX = self.config.cm_underlineWidth ? rightLabel.cm_centerX + self.config.cm_underlineWidth * 0.5 - newWidth : rightLabelRight - newWidth;
+            
+            self.underLine.cm_x = originalX;
+            self.underLine.cm_width = newWidth;
+            
+        }
+    }
+    
+}
 
-- (void)modifyColorWithScrollProgress:(CGFloat)progress LeftIndex:(NSUInteger)leftIndex RightIndex:(NSUInteger)rightIndex {
+- (void)click_modifyCoverWithScrollProgress:(CGFloat)progress LeftIndex:(NSUInteger)leftIndex RightIndex:(NSUInteger)rightIndex {
+    
+    if ( rightIndex >= self.titleLabels.count || leftIndex >= self.titleLabels.count || !(self.config.cm_switchMode & CMPageTitleSwitchMode_Cover)) return;
+
+    
+    CMDisplayTitleLabel *rightLabel = self.titleLabels[rightIndex];
+    CMDisplayTitleLabel *leftLabel = self.titleLabels[leftIndex];
+    
+    
+    CGFloat deltaX = self.config.cm_coverWidth ? rightLabel.cm_centerX - leftLabel.cm_centerX : rightLabel.cm_x - leftLabel.cm_x;
+    
+    CGFloat deltaWidth = self.config.cm_coverWidth ? 0 : rightLabel.cm_width - leftLabel.cm_width;
+    
+    
+    CGFloat newCenterX = progress * deltaX + leftLabel.cm_centerX ;
+    CGFloat newWidth = self.config.cm_coverWidth ? : (progress * deltaWidth + leftLabel.cm_width + 2*self.config.cm_coverHorizontalMargin);
+    self.titleCover.cm_centerX = newCenterX;
+    self.titleCover.cm_width = newWidth;
+    
+    
+}
+
+- (void)scroll_modifyUnderlineWithScrollProgress:(CGFloat)progress LeftIndex:(NSUInteger)leftIndex RightIndex:(NSUInteger)rightIndex {
+    
+    
+    if (_isClickTitle ) return;
+    
+    
+    [self click_modifyUnderlineWithScrollProgress:progress LeftIndex:leftIndex RightIndex:rightIndex];
+    
+    //
+    //    CMDisplayTitleLabel *rightLabel = self.titleLabels[rightIndex];
+    //    CMDisplayTitleLabel *leftLabel = self.titleLabels[leftIndex];
+    //
+    //
+    //    CGFloat rightLabelX = rightLabel.cm_x + (1 - self.config.cm_underlineWidthScale)*rightLabel.cm_width*0.5;
+    //    CGFloat leftLabelX = leftLabel.cm_x + (1 - self.config.cm_underlineWidthScale)*leftLabel.cm_width*0.5;
+    //    CGFloat rightLabelWidth = rightLabel.cm_width * self.config.cm_underlineWidthScale;
+    //    CGFloat leftLabelWidth = leftLabel.cm_width * self.config.cm_underlineWidthScale;
+    //
+    //    if (!self.config.cm_underlineStretch) {
+    //
+    //        CGFloat deltaX = self.config.cm_underlineWidth ? (rightLabel.cm_centerX - leftLabel.cm_centerX) : (rightLabelX - leftLabelX);
+    //
+    //        CGFloat deltaWidth = self.config.cm_underlineWidth ? 0 : (rightLabelWidth - leftLabelWidth);
+    //
+    //        CGFloat newOriginalX = self.config.cm_underlineWidth ? progress*deltaX + leftLabel.cm_centerX - self .config.cm_underlineWidth * 0.5: progress * deltaX + leftLabelX;
+    //        CGFloat newWidth = self.config.cm_underlineWidth ? : (progress * deltaWidth + leftLabelWidth);
+    //
+    //        self.underLine.cm_x = newOriginalX;
+    //        self.underLine.cm_width = newWidth;
+    //
+    //    } else {
+    //
+    //        CGFloat rightLabelRight = rightLabel.cm_right - (rightLabel.cm_width - rightLabelWidth)*0.5;
+    //        CGFloat leftLabelRight = leftLabel.cm_right - (leftLabel.cm_width - leftLabelWidth)*0.5;
+    //
+    //        if (progress <= 0.5) {
+    //            CGFloat deltaWidth =  self.config.cm_underlineWidth ? (rightLabel.cm_centerX - leftLabel.cm_centerX) : rightLabelRight - leftLabelRight;
+    //
+    //            CGFloat originalWidth = self.config.cm_underlineWidth ?: leftLabelWidth;
+    //
+    //            CGFloat newWidth = 2 * progress * deltaWidth + originalWidth;
+    //
+    //            CGFloat originalX = self.config.cm_underlineWidth ? leftLabel.cm_centerX - self.config.cm_underlineWidth * 0.5 : leftLabelX;
+    //
+    //            self.underLine.cm_width = newWidth;
+    //            self.underLine.cm_x = originalX;
+    //
+    //
+    //        } else {
+    //
+    //            CGFloat deltaWidth = self.config.cm_underlineWidth ? (rightLabel.cm_centerX - leftLabel.cm_centerX) : rightLabelX - leftLabelX;
+    //
+    //            progress = 1- progress;
+    //            CGFloat newWidth = 2 * progress * deltaWidth + (self.config.cm_underlineWidth ?: rightLabelWidth);
+    //
+    //            CGFloat originalX = self.config.cm_underlineWidth ? rightLabel.cm_centerX + self.config.cm_underlineWidth * 0.5 - newWidth : rightLabelRight - newWidth;
+    //
+    //            self.underLine.cm_x = originalX;
+    //            self.underLine.cm_width = newWidth;
+    //
+    //        }
+    //    }
+    
+}
+
+
+- (void)scroll_modifyColorWithScrollProgress:(CGFloat)progress LeftIndex:(NSUInteger)leftIndex RightIndex:(NSUInteger)rightIndex {
     
     if (_isClickTitle || rightIndex >= self.titleLabels.count) return;
+  
     
     CMDisplayTitleLabel *rightLabel = self.titleLabels[rightIndex];
     CMDisplayTitleLabel *leftLabel = self.titleLabels[leftIndex];
@@ -526,15 +630,13 @@ static NSInteger cm_page_animation_drucaiton = 0;
     
 }
 
-
-- (void)modifyTitleScaleWithScrollProgress:(CGFloat)progress LeftIndex:(NSUInteger)leftIndex RightIndex:(NSUInteger)rightIndex {
+- (void)scroll_modifyTitleScaleWithScrollProgress:(CGFloat)progress LeftIndex:(NSUInteger)leftIndex RightIndex:(NSUInteger)rightIndex {
     
     
     if (!(self.config.cm_switchMode & CMPageTitleSwitchMode_Scale) || _isClickTitle || rightIndex >= self.titleLabels.count) return;
     
     CMDisplayTitleLabel *rightLabel = self.titleLabels[rightIndex];
     CMDisplayTitleLabel *leftLabel = self.titleLabels[leftIndex];
-    
     
     CGFloat rightScale = progress;
     
@@ -546,95 +648,17 @@ static NSInteger cm_page_animation_drucaiton = 0;
     leftLabel.transform = CGAffineTransformMakeScale(leftScale * scaleTransform + 1, leftScale * scaleTransform + 1);
     rightLabel.transform = CGAffineTransformMakeScale(rightScale * scaleTransform + 1, rightScale * scaleTransform +1);
     
+ 
 }
 
-
-
-
-- (void)modifyCoverWithScrollProgress:(CGFloat)progress LeftIndex:(NSUInteger)leftIndex RightIndex:(NSUInteger)rightIndex {
+- (void)scroll_modifyCoverWithScrollProgress:(CGFloat)progress LeftIndex:(NSUInteger)leftIndex RightIndex:(NSUInteger)rightIndex {
 
     
     //通过判断isClickTitle的属性来防止二次偏移
-    if (!(self.config.cm_switchMode & CMPageTitleSwitchMode_Cover) || _isClickTitle || rightIndex >= self.titleLabels.count) return;
+    if (_isClickTitle) return;
     
-    CMDisplayTitleLabel *rightLabel = self.titleLabels[rightIndex];
-    CMDisplayTitleLabel *leftLabel = self.titleLabels[leftIndex];
+    [self click_modifyCoverWithScrollProgress:progress LeftIndex:leftIndex RightIndex:rightIndex];
     
-    
-    CGFloat deltaX = self.config.cm_coverWidth ? rightLabel.cm_centerX - leftLabel.cm_centerX : rightLabel.cm_x - leftLabel.cm_x;
-    
-    CGFloat deltaWidth = self.config.cm_coverWidth ? 0 : rightLabel.cm_width - leftLabel.cm_width;
-    
-    
-    CGFloat newCenterX = progress * deltaX + leftLabel.cm_centerX ;
-    CGFloat newWidth = self.config.cm_coverWidth ? : (progress * deltaWidth + leftLabel.cm_width + 2*self.config.cm_coverHorizontalMargin);
-    self.titleCover.cm_centerX = newCenterX;
-    self.titleCover.cm_width = newWidth;
-  
-    
-}
-
-
-
-- (void)modifyUnderlineWithScrollProgress:(CGFloat)progress LeftIndex:(NSUInteger)leftIndex RightIndex:(NSUInteger)rightIndex {
-    
-    
-    if (!(self.config.cm_switchMode & CMPageTitleSwitchMode_Underline) || _isClickTitle || rightIndex >= self.titleLabels.count) return;
-    
-    CMDisplayTitleLabel *rightLabel = self.titleLabels[rightIndex];
-    CMDisplayTitleLabel *leftLabel = self.titleLabels[leftIndex];
-    
-    
-    CGFloat rightLabelX = rightLabel.cm_x + (1 - self.config.cm_underlineWidthScale)*rightLabel.cm_width*0.5;
-    CGFloat leftLabelX = leftLabel.cm_x + (1 - self.config.cm_underlineWidthScale)*leftLabel.cm_width*0.5;
-    CGFloat rightLabelWidth = rightLabel.cm_width * self.config.cm_underlineWidthScale;
-    CGFloat leftLabelWidth = leftLabel.cm_width * self.config.cm_underlineWidthScale;
-    
-    if (!self.config.cm_underlineStretch) {
-        
-        CGFloat deltaX = self.config.cm_underlineWidth ? (rightLabel.cm_centerX - leftLabel.cm_centerX) : (rightLabelX - leftLabelX);
-        
-        CGFloat deltaWidth = self.config.cm_underlineWidth ? 0 : (rightLabelWidth - leftLabelWidth);
-        
-        CGFloat newOriginalX = self.config.cm_underlineWidth ? progress*deltaX + leftLabel.cm_centerX - self .config.cm_underlineWidth * 0.5: progress * deltaX + leftLabelX;
-        CGFloat newWidth = self.config.cm_underlineWidth ? : (progress * deltaWidth + leftLabelWidth);
-        
-        self.underLine.cm_x = newOriginalX;
-        self.underLine.cm_width = newWidth;
-        
-    } else {
-       
-        CGFloat rightLabelRight = rightLabel.cm_right - (rightLabel.cm_width - rightLabelWidth)*0.5;
-        CGFloat leftLabelRight = leftLabel.cm_right - (leftLabel.cm_width - leftLabelWidth)*0.5;
-        
-        if (progress <= 0.5) {
-            CGFloat deltaWidth =  self.config.cm_underlineWidth ? (rightLabel.cm_centerX - leftLabel.cm_centerX) : rightLabelRight - leftLabelRight;
-            
-            CGFloat originalWidth = self.config.cm_underlineWidth ?: leftLabelWidth;
-            
-            CGFloat newWidth = 2 * progress * deltaWidth + originalWidth;
-            
-            CGFloat originalX = self.config.cm_underlineWidth ? leftLabel.cm_centerX - self.config.cm_underlineWidth * 0.5 : leftLabelX;
-            
-            self.underLine.cm_width = newWidth;
-            self.underLine.cm_x = originalX;
-            
-            
-        } else {
-            
-            CGFloat deltaWidth = self.config.cm_underlineWidth ? (rightLabel.cm_centerX - leftLabel.cm_centerX) : rightLabelX - leftLabelX;
-            
-            progress = 1- progress;
-            CGFloat newWidth = 2 * progress * deltaWidth + (self.config.cm_underlineWidth ?: rightLabelWidth);
-            
-            CGFloat originalX = self.config.cm_underlineWidth ? rightLabel.cm_centerX + self.config.cm_underlineWidth * 0.5 - newWidth : rightLabelRight - newWidth;
-            
-            self.underLine.cm_x = originalX;
-            self.underLine.cm_width = newWidth;
-            
-        }
-    }
-
 }
 
 
@@ -644,6 +668,7 @@ static NSInteger cm_page_animation_drucaiton = 0;
 
 
 @implementation CMDisplayTitleLabel
+
 
 -(void)drawRect:(CGRect)rect {
     [super drawRect: rect];
