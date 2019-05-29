@@ -494,6 +494,8 @@ isPhoneX = [[UIApplication sharedApplication] delegate].window.safeAreaInsets.bo
     config.cm_switchMode = CMPageTitleSwitchMode_Scale;
     //    默认
     //    config.cm_scaleGradientContentMode = CMPageTitleScaleGradientContentMode_Center;
+    config.cm_scale = 1.3;
+
     pageView.cm_config = config;
     
 }
@@ -516,6 +518,7 @@ isPhoneX = [[UIApplication sharedApplication] delegate].window.safeAreaInsets.bo
     config.cm_childControllers = self.childControllers;
     config.cm_switchMode = CMPageTitleSwitchMode_Scale;
     config.cm_scaleGradientContentMode = CMPageTitleScaleGradientContentMode_Top;
+    config.cm_scale = 1.3;
     pageView.cm_config = config;
     
 }
@@ -538,7 +541,8 @@ isPhoneX = [[UIApplication sharedApplication] delegate].window.safeAreaInsets.bo
     config.cm_childControllers = self.childControllers;
     config.cm_switchMode = CMPageTitleSwitchMode_Scale;
     config.cm_scaleGradientContentMode = CMPageTitleScaleGradientContentMode_Bottom;
-    
+    config.cm_scale = 1.3;
+
     pageView.cm_config = config;
     
 }

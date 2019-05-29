@@ -25,9 +25,7 @@ typedef NS_ENUM(NSUInteger,CMTitleColorGradientStyle) {
     
     /**填充色颜色渐变*/
     CMTitleColorGradientStyle_Fill = 2,
-    
-   
-    
+
     
 };
 
@@ -54,7 +52,10 @@ typedef NS_OPTIONS(NSUInteger, CMPageTitleAdditionalModeOptions) {
     CMPageTitleAdditionalMode_Seperateline = 1 << 0,
     
     /**标题文字之间的分割线*/
-    CMPageTitleAdditionalMode_Splitter = 1 << 1
+    CMPageTitleAdditionalMode_Splitter = 1 << 1,
+    
+    /**下划线渐变色*/
+    CMPageTitleAdditionalMode_UnderlineGradiennt = 1 << 2,
     
     
 };
@@ -281,6 +282,12 @@ typedef NS_ENUM(NSUInteger,CMPageTitleScaleGradientContentMode) {
  具体效果可以看github效果展示
  */
 @property (nonatomic,assign) BOOL cm_underlineStretch;
+
+/**
+ 下划线渐变色数组
+ 渐变色数据源
+ */
+@property (nonatomic,copy) NSArray *cm_underlineColors;
 
 
 

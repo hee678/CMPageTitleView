@@ -38,12 +38,40 @@
 /**分割线视图数组*/
 @property (nonatomic,strong) NSArray *splitters;
 
+/**渐变色image数组*/
+@property (nonatomic,strong) NSArray *gradientImages;
 
 
 @end
 
 
 @implementation CMPageTitleContentView
+
+- (NSArray *)gradientImages {
+    
+    if (!_gradientImages) {
+        NSMutableArray *mArray = [NSMutableArray array];
+        
+        for (NSInteger i = 0; i < self.titleLabels.count - 1; i++) {
+           
+            CGFloat maxWidth = [self.titleLabels[i + 1] cm_right] - [self.titleLabels[i] cm_left];
+            
+            CGFloat startX = [self.titleLabels[i] cm_width] / maxWidth;
+
+            CGFloat endX = [self.titleLabels[i + 1] cm_width] / maxWidth;
+          UIImage *image = [self gradientColorWithBounds:CGRectMake(0, 0, maxWidth, self.underLine.cm_height) Colors:@[UIColor.redColor,UIColor.blackColor] StartPoint:CGPointMake(startX,0.5) EndPoint:CGPointMake(1 - endX,0.5)];
+            NSLog(@"第%ld个：最大宽度%lf\n左宽度：%lf\n右宽度：%lf\n开始比例：%lf\n结束比例：%lf",i,maxWidth,[self.titleLabels[i] cm_width],[self.titleLabels[i+1] cm_width],startX,1-endX);
+            
+            [mArray addObject:image];
+            
+        }
+        
+        _gradientImages = [mArray copy];
+        
+    }
+    
+    return _gradientImages;
+}
 
 
 - (NSArray *)splitters {
@@ -606,7 +634,8 @@
             
             self.underLine.cm_width = newWidth;
             self.underLine.cm_x = originalX;
-            
+            self.underLine.backgroundColor = [UIColor colorWithPatternImage:self.gradientImages[leftIndex]];
+
             
         } else {
             
@@ -619,12 +648,107 @@
             
             self.underLine.cm_x = originalX;
             self.underLine.cm_width = newWidth;
-            
+            CGFloat maxWidth = rightLabel.cm_right - leftLabel.cm_left;
+
+          self.underLine.backgroundColor =   [self colorWithCorpImage:self.gradientImages[leftIndex] Progress:progress MaxWidth:maxWidth UnderlineW:newWidth];
+
         }
     }
+    
+
+    
+    
+//    UIColor *leftColor = self.config.cm_underlineColors[leftIndex % self.config.cm_underlineColors.count];
+//    UIColor *rightColor = self.config.cm_underlineColors[rightIndex % self.config.cm_underlineColors.count];
+//    UIColor *leftColor = [UIColor redColor];
+//    UIColor *rightColor = [UIColor blackColor];
+//
+//    CGFloat startX = leftLabel.cm_width / maxWidth;
+//    CGFloat endX = rightLabel.cm_width /maxWidth;;
+//    self.underLine.backgroundColor = [self gradientColorWithBounds:self.underLine.bounds Colors:@[leftColor,rightColor] StartPoint:CGPointMake(startX, 0.5) EndPoint:CGPointMake(endX, 0.5)];
+
+//    if (progress > 0.1 && progress <= 0.5) {
+//
+//    }
+    
+//    if (progress > 0.5 && progress <=0.8) {
+//        self.underLine.backgroundColor = [self gradientColorWithBounds:self.underLine.bounds Colors:@[leftColor,rightColor] StartPoint:CGPointMake(1 - endX, 0.5) EndPoint:CGPointMake(endX, 0.5)];
+//
+//    }
+    
 
 }
 
+- (UIColor *)colorWithCorpImage:(UIImage *)image Progress:(CGFloat)progress MaxWidth:(CGFloat)maxWidth UnderlineW:(CGFloat )underlineW{
+    
+////    UIGraphicsBeginImageContext(image.size);
+////    UIGraphicsBeginImageContextWithOptions(image.size, YES, 0.0);
+    NSLog(@"图片宽度:%lf",image.size.width);
+    
+    CGRect rect = CGRectMake(image.size.width - underlineW, 0 , underlineW, image.size.height);
+//
+//    //1.开启图形上下文 scale比例因素：当前点与像素比例 0自适应
+//    UIGraphicsBeginImageContextWithOptions(image.size,NO, 0);
+//
+//    //2.描述裁剪区域
+//    UIBezierPath *path = [UIBezierPath bezierPathWithRect:rect];
+//
+//    //3.设置裁剪区域
+//    [path addClip];
+//
+//    //4.画图片
+//    [image drawAtPoint:CGPointZero];
+//
+//    //5.取出图片
+//    UIImage *clipImage = UIGraphicsGetImageFromCurrentImageContext();
+//
+//    //6.关闭上下文
+//    UIGraphicsEndImageContext();
+//
+//
+//    underline.backgroundColor = [UIColor colorWithPatternImage:clipImage];
+
+    CGImageRef imageRef = CGImageCreateWithImageInRect(image.CGImage, rect);
+    
+    
+   return [UIColor colorWithPatternImage:[UIImage imageWithCGImage:imageRef]];
+    
+    
+}
+
+
+
+- (UIImage *)gradientColorWithBounds:(CGRect)bounds Colors:( NSArray <UIColor *>*)colors StartPoint:(CGPoint)startPoint EndPoint:(CGPoint)endPoint {
+    
+    
+    //Create our background gradient layer
+    CAGradientLayer *backgroundGradientLayer = [CAGradientLayer layer];
+    
+    //Set the frame to our object's bounds
+    backgroundGradientLayer.frame = bounds;
+    
+    [colors makeObjectsPerformSelector:@selector(CGColor)];
+    
+    backgroundGradientLayer.colors = @[(__bridge id)[colors.firstObject CGColor],(__bridge id)[colors[1] CGColor]];
+    
+    
+    [backgroundGradientLayer setStartPoint:startPoint];
+    [backgroundGradientLayer setEndPoint:endPoint];
+    backgroundGradientLayer.locations = @[@0,@1];
+    
+    //Convert our CALayer to a UIImage object
+    UIGraphicsBeginImageContextWithOptions(backgroundGradientLayer.bounds.size,NO, [UIScreen mainScreen].scale);
+    [backgroundGradientLayer renderInContext:UIGraphicsGetCurrentContext()];
+    UIImage *backgroundColorImage = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    
+    return backgroundColorImage;
+    
+//    return [UIColor colorWithPatternImage:backgroundColorImage];
+    
+    
+    
+}
 
 
 @end
