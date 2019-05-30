@@ -646,12 +646,32 @@
             
             CGFloat originalX = self.config.cm_underlineWidth ? rightLabel.cm_centerX + self.config.cm_underlineWidth * 0.5 - newWidth : rightLabelRight - newWidth;
             
-            self.underLine.cm_x = originalX;
-            self.underLine.cm_width = newWidth;
+           
             CGFloat maxWidth = rightLabel.cm_right - leftLabel.cm_left;
 
-          self.underLine.backgroundColor =   [self colorWithCorpImage:self.gradientImages[leftIndex] Progress:progress MaxWidth:maxWidth UnderlineW:newWidth];
+            
+            self.underLine.cm_x = originalX;
+            self.underLine.cm_width = newWidth;
 
+//            self.underLine.backgroundColor =  [self colorWithCorpImage:self.gradientImages[leftIndex] Progress:progress MaxWidth:maxWidth UnderlineW:newWidth];
+CGFloat x = (maxWidth - newWidth )* leftLabel.cm_width /(maxWidth - rightLabel.cm_width);
+            UIImage *image = [self gradientColorWithBounds:self.underLine.bounds Colors:@[UIColor.redColor,UIColor.blackColor] StartPoint:CGPointMake(x/newWidth, 0.5) EndPoint:CGPointMake(rightLabel.cm_width/newWidth , 0.5)];
+            
+            self.underLine.backgroundColor = [UIColor colorWithPatternImage:image];
+           
+            if (progress <= 0.9 ) {
+                
+                
+                
+              
+                
+            } else {
+                
+                
+                
+            }
+          
+        
         }
     }
     
@@ -683,9 +703,11 @@
     
 ////    UIGraphicsBeginImageContext(image.size);
 ////    UIGraphicsBeginImageContextWithOptions(image.size, YES, 0.0);
-    NSLog(@"图片宽度:%lf",image.size.width);
+   
     
-    CGRect rect = CGRectMake(image.size.width - underlineW, 0 , underlineW, image.size.height);
+    CGFloat x = image.size.width -ceil(underlineW);
+    
+    CGRect rect = CGRectMake(x, 0 , ceil(underlineW) , image.size.height);
 //
 //    //1.开启图形上下文 scale比例因素：当前点与像素比例 0自适应
 //    UIGraphicsBeginImageContextWithOptions(image.size,NO, 0);
@@ -707,11 +729,16 @@
 //
 //
 //    underline.backgroundColor = [UIColor colorWithPatternImage:clipImage];
-
+    
     CGImageRef imageRef = CGImageCreateWithImageInRect(image.CGImage, rect);
     
+    UIImage *newImage = [UIImage imageWithCGImage:imageRef];
+    NSLog(@"图片宽度：%lf\n裁剪范围：%@\n裁剪后的图片大小：%@",image.size.width,NSStringFromCGRect(rect),NSStringFromCGSize(newImage.size));
+
+   return [UIColor colorWithPatternImage:newImage];
     
-   return [UIColor colorWithPatternImage:[UIImage imageWithCGImage:imageRef]];
+    
+    
     
     
 }
@@ -719,7 +746,6 @@
 
 
 - (UIImage *)gradientColorWithBounds:(CGRect)bounds Colors:( NSArray <UIColor *>*)colors StartPoint:(CGPoint)startPoint EndPoint:(CGPoint)endPoint {
-    
     
     //Create our background gradient layer
     CAGradientLayer *backgroundGradientLayer = [CAGradientLayer layer];
@@ -740,6 +766,7 @@
     UIGraphicsBeginImageContextWithOptions(backgroundGradientLayer.bounds.size,NO, [UIScreen mainScreen].scale);
     [backgroundGradientLayer renderInContext:UIGraphicsGetCurrentContext()];
     UIImage *backgroundColorImage = UIGraphicsGetImageFromCurrentImageContext();
+
     UIGraphicsEndImageContext();
     
     return backgroundColorImage;
